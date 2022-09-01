@@ -1,27 +1,115 @@
 version: "3.9"
 services:
-  laravel:
-    image: "nginx:stable-alpine"
+  nginx:
+    image: nginx:stable-alpine
     ports:
-        - "80:80"
+      - 80:80
+    volumes:
+      - ./src:/var/www/html
+      - ./configs/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - db
     networks:
-      - laravelnet
+      - laranet
+    container_name: "${PROJECT_NAME:?err}_nginx"
 
-  mysql:
-    image: "mariadb:10.9.2"
+  php:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
     ports:
-      - "3306:3306"
+      - 9000:9000
+    volumes:
+      - ./src:/var/www/html
+      - ./configs/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    user: 1000:1000
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME:?err}_php"
+
+  composer:
+    image: composer:latest
+    volumes: 
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["composer", "--ignore-platform-reqs"]
+    user: 1000:1000
+    depends_on:
+      - php
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME:?err}_composer"
+
+  artisan:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["php", "/var/www/html"]
+    # user: 1000:1000
+    depends_on:
+      - db
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME?err}_artisan"
+
+  db:
+    image: mariadb:10.9.2
+    ports:
+      - 3306:3306
     environment:
-      MYSQL_DATABASE: laravel
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: "${DB_NAME:?err}"
+      MYSQL_USER: "${DB_USER:?err}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:?err}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:?err}"
       SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      SERVICE_NAME: db
     networks:
-      - laravelnet
+      - laranet
+    container_name: "${PROJECT_NAME:?err}_db"
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    links: 
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    ports:
+      - 8080:80
+    depends_on: 
+      - db
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME?err}_phpmyadmin"
 
+  phploy:
+    build:
+      context: ./dockerfiles
+      dockerfile: phploy.dockerfile
+    volumes: 
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["phploy"]
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME?err}_phploy"
+
+  npm:
+    image: node:18.8
+    ports:
+      - 3000:3000
+      - 3001:3001
+    volumes: 
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["npm"]
+    networks:
+      - laranet
+    container_name: "${PROJECT_NAME?err}_npm"
 
 networks:
-  laravelnet:
+  laranet:
