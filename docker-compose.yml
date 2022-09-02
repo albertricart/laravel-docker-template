@@ -11,7 +11,7 @@ services:
       - db
     networks:
       - laranet
-    container_name: "${PROJECT_NAME:?err}_nginx"
+    container_name: "nginx_${PROJECT_NAME:?err}"
 
   php:
     build:
@@ -25,7 +25,7 @@ services:
     user: 1000:1000
     networks:
       - laranet
-    container_name: "${PROJECT_NAME:?err}_php"
+    container_name: "php_${PROJECT_NAME:?err}"
 
   composer:
     image: composer:latest
@@ -38,7 +38,7 @@ services:
       - php
     networks:
       - laranet
-    container_name: "${PROJECT_NAME:?err}_composer"
+    container_name: "composer_${PROJECT_NAME:?err}"
 
   artisan:
     build:
@@ -47,13 +47,13 @@ services:
     volumes:
       - ./src:/var/www/html
     working_dir: /var/www/html
-    entrypoint: ["php", "/var/www/html"]
-    # user: 1000:1000
+    entrypoint: ["php", "/var/www/html/artisan"]
+    user: 1000:1000
     depends_on:
       - db
     networks:
       - laranet
-    container_name: "${PROJECT_NAME?err}_artisan"
+    container_name: "artisan_${PROJECT_NAME:?err}"
 
   db:
     image: mariadb:10.9.2
@@ -68,7 +68,7 @@ services:
       SERVICE_NAME: db
     networks:
       - laranet
-    container_name: "${PROJECT_NAME:?err}_db"
+    container_name: "db_${PROJECT_NAME:?err}"
 
   phpmyadmin:
     image: phpmyadmin:latest
@@ -84,7 +84,7 @@ services:
       - db
     networks:
       - laranet
-    container_name: "${PROJECT_NAME?err}_phpmyadmin"
+    container_name: "phpmyadmin_${PROJECT_NAME:?err}"
 
   phploy:
     build:
@@ -96,7 +96,7 @@ services:
     entrypoint: ["phploy"]
     networks:
       - laranet
-    container_name: "${PROJECT_NAME?err}_phploy"
+    container_name: "phploy_${PROJECT_NAME:?err}"
 
   npm:
     image: node:18.8
@@ -109,7 +109,7 @@ services:
     entrypoint: ["npm"]
     networks:
       - laranet
-    container_name: "${PROJECT_NAME?err}_npm"
+    container_name: "npm_${PROJECT_NAME:?err}"
 
 networks:
   laranet:
