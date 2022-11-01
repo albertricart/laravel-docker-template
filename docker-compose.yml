@@ -99,8 +99,9 @@ services:
       context: ./dockerfiles
       dockerfile: phploy.dockerfile
     volumes: 
-      - ./src:/var/www/html
+      - ./:/var/www/html
     working_dir: /var/www/html
+    user: 1000:1000
     entrypoint: ["phploy"]
     networks:
       - laranet
